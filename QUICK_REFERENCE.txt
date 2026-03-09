@@ -1,0 +1,355 @@
+"""
+QUICK REFERENCE GUIDE - HR vs DR Classification Model
+======================================================
+
+This file provides quick commands and explanations for the most common tasks.
+"""
+
+# ============================================================================
+# GETTING STARTED
+# ============================================================================
+
+# 1. First-time setup (install dependencies)
+pip install -r requirements.txt
+
+# 2. Verify everything is working
+python test_setup.py
+
+# 3. Run everything automatically (recommended for first time)
+python quick_start.py
+
+# 4. Or run the full pipeline with one command
+python main.py --stage all
+
+
+# ============================================================================
+# INDIVIDUAL STAGES (if you want to run them separately)
+# ============================================================================
+
+# Prepare data (organize into train/val/test - 70%/15%/15%)
+python main.py --stage prep
+
+# Train the model
+python main.py --stage train \
+  --model-name efficientnet_b0 \
+  --batch-size 32 \
+  --num-epochs 50 \
+  --learning-rate 1e-3
+
+# Evaluate on test set
+python main.py --stage eval
+
+# Generate GradCAM heatmap visualizations
+python main.py --stage gradcam
+
+
+# ============================================================================
+# COMMON CONFIGURATIONS
+# ============================================================================
+
+# Fast training (good for testing)
+python main.py --stage all --batch-size 64 --num-epochs 20
+
+# Accurate training (better quality)
+python main.py --stage all --model-name resnet50 --batch-size 32 --num-epochs 100
+
+# State-of-the-art (best accuracy, slowest)
+python main.py --stage all --model-name vit_b16 --batch-size 16 --num-epochs 50
+
+# GPU training (automatic if CUDA available)
+# Just run normally - it will auto-detect GPU
+
+# CPU only training (if GPU unavailable)
+python main.py --stage all  # Will auto-use CPU
+
+
+# ============================================================================
+# UNDERSTANDING THE OUTPUT
+# ============================================================================
+
+Checkpoints/       - Contains model weights and training config
+├── best_model.pt                  - Best trained model
+├── config.json                    - Model configuration
+└── training_history.json          - Loss/accuracy over time
+
+Results/
+├── evaluation/                    - Test set metrics
+│   ├── confusion_matrix.png       - Classification confusion matrix
+│   ├── metrics.png                - Precision/Recall/F1-Score chart
+│   └── evaluation_results.txt     - Summary of all metrics
+└── gradcam/                       - Heatmap visualizations
+    ├── HR/                        - HR predictions
+    ├── DR/                        - DR predictions
+    └── Normal/                    - Normal fundus predictions
+        ├── 000_01_original.png    - Original image
+        ├── 000_02_cam.png         - Heatmap only
+        └── 000_03_overlay.png     - Heatmap on image
+
+
+# ============================================================================
+# MODEL COMPARISON
+# ============================================================================
+
+Model           Speed   Accuracy  Memory   Best For
+─────────────────────────────────────────────────────
+EfficientNet    Fast    Good      Low      Default/Quick training
+ResNet50        Medium  Better    Medium   Balanced accuracy/speed
+ViT-B16         Slow    Best      High     Maximum accuracy research
+
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# Out of memory? Use smaller batch size:
+python main.py --stage train --batch-size 16
+
+# Slow training? Use simpler model:
+python main.py --stage train --model-name efficientnet_b0
+
+# GPU not found?
+- Check if CUDA is installed: nvidia-smi
+- Install GPU version: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# Data not found?
+- Check paths are correct:
+  - Diabetic Retinopathy Images/DR/
+  - Diabetic Retinopathy Images/No_DR/
+  - Hypertensive Retinopathy Images/1-Hypertensive Classification/1-Images/1-Training Set/
+- Re-run: python main.py --stage prep
+
+
+# ============================================================================
+# DATASET INFORMATION
+# ============================================================================
+
+Total Images:
+  - Diabetic Retinopathy:     3,662 images (1,857 DR + 1,805 No_DR)
+  - Hypertensive Retinopathy:   712 images (~356 HR + ~356 Normal)
+  - Combined:                 4,374 images
+
+Split (automatic):
+  - Training (70%):   ~3,062 images
+  - Validation (15%):   ~657 images
+  - Test (15%):         ~657 images
+
+Classes (3-way classification):
+  1. DR (Diabetic Retinopathy positive)
+  2. HR (Hypertensive Retinopathy positive)
+  3. Normal (Normal fundus images)
+
+
+# ============================================================================
+# KEY FEATURES
+# ============================================================================
+
+✓ Automatic 70/15/15 train/val/test splitting
+✓ Data augmentation for better generalization
+✓ Multiple architecture support (EfficientNet, ResNet, ViT)
+✓ GradCAM explainability heatmaps
+✓ Automatic best model saving
+✓ Comprehensive evaluation metrics
+✓ Training history and visualization
+✓ Per-class performance metrics
+✓ Confusion matrix analysis
+
+
+# ============================================================================
+# INTERPRETING RESULTS
+# ============================================================================
+
+Accuracy: Percentage of correct predictions
+- Good: >85%
+- Excellent: >90%
+
+Precision: Of positive predictions, how many were correct
+- Good: >85% per class
+- Excellent: >90% per class
+
+Recall: Of actual positives, how many did we find
+- Good: >85% per class
+- Excellent: >90% per class
+
+F1-Score: Harmonic mean of precision and recall
+- Good: >0.85
+- Excellent: >0.90
+
+Confusion Matrix: Shows which classes are confused with each other
+- Diagonal should be high (correct predictions)
+- Off-diagonal should be low (misclassifications)
+
+GradCAM Heatmaps: Red/hot regions = where model focuses
+- Good model: Highlights clinically relevant features
+- Poor model: May highlight noise or irrelevant regions
+
+
+# ============================================================================
+# EXAMPLE WORKFLOW
+# ============================================================================
+
+# Day 1: First-time setup and verification
+python test_setup.py
+
+# Day 1: Quick test (fast training, 20 epochs)
+python main.py --stage all --batch-size 64 --num-epochs 20
+
+# Review results in results/ folder
+
+# Day 2: Full training (production quality)
+python main.py --stage all --batch-size 32 --num-epochs 50
+
+# Review final results
+
+# Day 3: Analyze GradCAM visualizations
+# Just open results/gradcam/ in file explorer
+
+# Optional: Fine-tune or compare models
+# Modify hyperparameters and re-run
+
+
+# ============================================================================
+# PYTHON API USAGE (Advanced Users)
+# ============================================================================
+
+from train import train_model
+
+# Train with custom settings
+model, history, class_names = train_model(
+    data_dir='data/organized',
+    model_name='resnet50',
+    batch_size=32,
+    num_epochs=100,
+    learning_rate=5e-4,
+    save_dir='checkpoints',
+    augment=True
+)
+
+# Evaluate
+from evaluate import evaluate_model
+
+metrics, preds, labels, probs, paths = evaluate_model(
+    model_path='checkpoints/best_model.pt',
+    data_dir='data/organized',
+    model_name='resnet50'
+)
+
+# Generate GradCAM
+from gradcam import generate_gradcam_visualization
+import torch
+from PIL import Image
+
+model = torch.load('checkpoints/best_model.pt')
+image = Image.open('path/to/image.png')
+
+result = generate_gradcam_visualization(
+    model=model,
+    image_tensor=transform(image).unsqueeze(0),
+    class_names=['DR', 'Normal', 'HR']
+)
+
+
+# ============================================================================
+# TIPS FOR BEST RESULTS
+# ============================================================================
+
+1. Data Quality
+   - Ensure images are properly organized
+   - Remove corrupted/duplicate images
+   - Use consistent image sizes
+
+2. Training
+   - Start with EfficientNet-B0
+   - Enable data augmentation
+   - Use learning rate scheduling
+   - Monitor validation accuracy
+
+3. Hyperparameters
+   - Batch size: 32-64 (depends on GPU memory)
+   - Learning rate: 1e-3 to 5e-4
+   - Epochs: 50-100
+   - Weight decay: 1e-4
+
+4. Interpretation
+   - Always check GradCAM heatmaps
+   - Review confusion matrix
+   - Check per-class metrics
+   - Look for systematic errors
+
+5. Improvement
+   - Collect more data if possible
+   - Try different architectures
+   - Experiment with augmentation
+   - Ensemble multiple models
+
+
+# ============================================================================
+# RESOURCES
+# ============================================================================
+
+Documentation: README.md
+Quick Start: quick_start.py
+Setup Test: test_setup.py
+Main Pipeline: main.py
+
+Papers Referenced:
+- EfficientNet: https://arxiv.org/abs/1905.11946
+- GradCAM: https://arxiv.org/abs/1610.02055
+- ResNet: https://arxiv.org/abs/1512.03385
+
+PyTorch Documentation: https://pytorch.org/docs/
+Torchvision Models: https://pytorch.org/vision/stable/models.html
+
+
+# ============================================================================
+# VERSION HISTORY
+# ============================================================================
+
+v1.0 (March 2024)
+- Initial release
+- Support for EfficientNet, ResNet50, ViT-B16
+- GradCAM visualization
+- Comprehensive evaluation metrics
+- Full training pipeline
+
+
+# ============================================================================
+# SUPPORT
+# ============================================================================
+
+If you encounter issues:
+
+1. Check test_setup.py output
+2. Review error messages carefully
+3. Check README.md for detailed documentation
+4. Try with smaller batch size
+5. Try with fewer epochs
+6. Make sure all image folders exist
+7. Verify Python version is 3.8 or higher
+8. Update dependencies: pip install -r requirements.txt --upgrade
+
+
+# ============================================================================
+# CONTACT & CITATION
+# ============================================================================
+
+For questions or improvements:
+- Review README.md
+- Check test_setup.py for diagnostics
+- Verify data paths and dependencies
+
+If using this in research:
+- Cite the original model papers
+- Mention PyTorch and torchvision
+- Credit GradCAM paper
+
+Citation example:
+HR vs DR Classification Model (2024)
+Using PyTorch with EfficientNet/ResNet/ViT
+GradCAM visualization for explainability
+
+"""
+
+# This is a reference guide. Print it or save to guide_reference.txt
+if __name__ == "__main__":
+    import __doc__
+    print(__doc__)
